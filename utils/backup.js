@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { zip, unzip } from "react-native-zip-archive";
 import * as DocumentPicker from "expo-document-picker";
 import * as Sharing from "expo-sharing";
@@ -10,8 +10,18 @@ const ZIP_PATH = BACKUP_FOLDER + "customers-backup.zip";
 
 let abortController = new AbortController();
 
+import { openDB } from "../database/db"; // your db helper
+
 export async function exportBackup() {
   try {
+    // 1. Close DB before copying
+    try {
+      const db = await openDB();
+      await db.closeAsync();
+    } catch (e) {
+      console.log("No active DB connection to close:", e.message);
+    }
+
     // Ensure backup folder exists
     const folderInfo = await FileSystem.getInfoAsync(BACKUP_FOLDER);
     if (!folderInfo.exists) {
@@ -28,34 +38,33 @@ export async function exportBackup() {
     const dbBackupPath = BACKUP_FOLDER + "customers.db";
     await FileSystem.copyAsync({ from: DB_PATH, to: dbBackupPath });
 
-    // Copy media files with cancellation check
+    // Copy media files
     const mediaFiles = await FileSystem.readDirectoryAsync(MEDIA_FOLDER);
     for (const file of mediaFiles) {
       if (abortController.signal.aborted) throw new Error("Backup cancelled");
-      await FileSystem.copyAsync({ from: MEDIA_FOLDER + file, to: BACKUP_FOLDER + file });
+      await FileSystem.copyAsync({
+        from: MEDIA_FOLDER + file,
+        to: BACKUP_FOLDER + file,
+      });
     }
 
     // Create zip
     if (abortController.signal.aborted) throw new Error("Backup cancelled");
     await zip(BACKUP_FOLDER, ZIP_PATH);
 
-    // Upload/Share: only proceed if not cancelled
     if (abortController.signal.aborted) throw new Error("Backup cancelled");
 
     if (await Sharing.isAvailableAsync()) {
-      // Note: sharing/upload may not support cancellation natively
       await Sharing.shareAsync(ZIP_PATH);
-      if (abortController.signal.aborted) throw new Error("Backup cancelled");
     }
 
-    // Only return ZIP_PATH if every step succeeded
     return ZIP_PATH;
-
   } catch (error) {
     console.warn(error.message);
-    return null; // cancelled or failed
+    return null;
   }
 }
+
 
 // Call this to cancel
 export function cancelBackup() {

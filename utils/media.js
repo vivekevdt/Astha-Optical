@@ -1,5 +1,5 @@
 // utils/media.js
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 
 /**
  * We keep images in the same "SQLite" directory you already use,
@@ -58,7 +58,6 @@ export async function deleteIfExists(path) {
   if (!path) return;
   try {
     const info = await FileSystem.getInfoAsync((path));
-    console.log(info)
     if (info.exists) {
       await FileSystem.deleteAsync((path), { idempotent: true });
 

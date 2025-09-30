@@ -58,7 +58,6 @@ export default function DashboardScreen({ navigation }) {
       .length;
   }
 
-  // console.log("Total customers:", getTotalCustomers());
 
   useFocusEffect(
     useCallback(() => {

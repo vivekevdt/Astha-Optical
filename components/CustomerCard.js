@@ -24,7 +24,6 @@ const latestImageDate = customer.images.reduce((latest, current) => {
   return currentDate > latest ? currentDate : latest;
 }, new Date(0)); // Start from epoch time
 
-console.log(latestImageDate);
   return (
     <View className="bg-neutral-800  rounded-2xl p-4 mb-4 relative">
       {/* Delete button (top-right) */}

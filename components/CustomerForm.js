@@ -212,8 +212,6 @@ export default function CustomerForm({
     setEdit(true);
   };
 
-
-
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-black p-1"
@@ -272,6 +270,7 @@ export default function CustomerForm({
               }}
               render={({ field: { onChange, value } }) => (
                 <TextInput
+                  testID="input-name" // ✅ Add testID
                   placeholder="Full Name"
                   value={value}
                   onChangeText={onChange}
@@ -329,90 +328,101 @@ export default function CustomerForm({
 
         {/* Phone Input */}
         <View className="relative mt-3">
-  {/* Phone Input Row */}
-  <View className="flex-row items-center gap-2">
-    <FontAwesome5 name="phone" size={24} color="white" className="mr-2" />
-    <Controller
-      control={control}
-      name="phone"
-      rules={{
-        required: "Phone number is required",
-        pattern: {
-          value: /^[0-9]{10}$/,
-          message: "Enter a valid 10-digit phone number",
-        },
-        maxLength: {
-          value: 10,
-          message: "Phone number cannot exceed 10 digits",
-        },
-      }}
-      render={({ field: { onChange, value } }) => (
-        <TextInput
-          placeholder="Mobile Number"
-          value={value}
-          onChangeText={(text) => {
-            if (text.length <= 10) onChange(text);
-          }}
-          keyboardType="phone-pad"
-          editable={isEdit || (!isEdit && !isView)}
-          placeholderTextColor="#9CA3AF"
-          className={`border border-gray-300 flex-1 bg-gray-100 rounded-lg p-3 text-base ${
-            isView ? "text-gray-400" : "text-black"
-          }`}
-        />
-      )}
-    />
-  </View>
+          {/* Phone Input Row */}
+          <View className="flex-row items-center gap-2">
+            <FontAwesome5
+              name="phone"
+              size={24}
+              color="white"
+              className="mr-2"
+            />
+            <Controller
+              control={control}
+              name="phone"
+              rules={{
+                required: "Phone number is required",
+                pattern: {
+                  value: /^[0-9]{10}$/,
+                  message: "Enter a valid 10-digit phone number",
+                },
+                maxLength: {
+                  value: 10,
+                  message: "Phone number cannot exceed 10 digits",
+                },
+              }}
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                testID="input-phone"   // ✅ Add testID
 
-  {/* Validation Error */}
-  {errors.phone && (
-    <Text className="text-red-500 text-sm mt-1 ml-10">
-      {errors.phone.message}
-    </Text>
-  )}
+                  placeholder="Mobile Number"
+                  value={value}
+                  onChangeText={(text) => {
+                    if (text.length <= 10) onChange(text);
+                  }}
+                  keyboardType="phone-pad"
+                  editable={isEdit || (!isEdit && !isView)}
+                  placeholderTextColor="#9CA3AF"
+                  className={`border border-gray-300 flex-1 bg-gray-100 rounded-lg p-3 text-base ${
+                    isView ? "text-gray-400" : "text-black"
+                  }`}
+                />
+              )}
+            />
+          </View>
 
-  {/* Phone Suggestions */}
-  {phoneSuggestions?.length > 0 &&
-    showPhoneSuggestions &&
-    !isView &&
-    !isEdit && (
-      <View className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg mt-1 z-10 shadow-lg">
-        {phoneSuggestions.map((s) => (
-          <TouchableOpacity
-            key={s.id}
-            onPress={() => {
-              suggestionsHandler(s);
-              setShowPhoneSuggestions(false); // ✅ correct toggle
-            }}
-            className="flex-row items-center p-3 border-b border-gray-100"
-            activeOpacity={0.7}
-          >
-            <View className="bg-blue-100 p-2 rounded-full mr-3">
-              <FontAwesome5 name="phone" size={16} color="#1D4ED8" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-gray-900 font-semibold">{s.name}</Text>
-              <Text className="text-gray-500 text-sm">{s.phone}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+          {/* Validation Error */}
+          {errors.phone && (
+            <Text className="text-red-500 text-sm mt-1 ml-10">
+              {errors.phone.message}
+            </Text>
+          )}
 
-        {/* Cancel Button */}
-        <TouchableOpacity
-          onPress={() => setShowPhoneSuggestions(false)} // ✅ fixed
-          className="p-3 items-center"
-        >
-          <Text className="text-red-500 font-semibold">Cancel</Text>
-        </TouchableOpacity>
-      </View>
-    )}
-</View>
+          {/* Phone Suggestions */}
+          {phoneSuggestions?.length > 0 &&
+            showPhoneSuggestions &&
+            !isView &&
+            !isEdit && (
+              <View className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg mt-1 z-10 shadow-lg">
+                {phoneSuggestions.map((s) => (
+                  <TouchableOpacity
+                    key={s.id}
+                    onPress={() => {
+                      suggestionsHandler(s);
+                      setShowPhoneSuggestions(false); // ✅ correct toggle
+                    }}
+                    className="flex-row items-center p-3 border-b border-gray-100"
+                    activeOpacity={0.7}
+                  >
+                    <View className="bg-blue-100 p-2 rounded-full mr-3">
+                      <FontAwesome5 name="phone" size={16} color="#1D4ED8" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-gray-900 font-semibold">
+                        {s.name}
+                      </Text>
+                      <Text className="text-gray-500 text-sm">{s.phone}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+
+                {/* Cancel Button */}
+                <TouchableOpacity
+                  onPress={() => setShowPhoneSuggestions(false)} // ✅ fixed
+                  className="p-3 items-center"
+                >
+                  <Text className="text-red-500 font-semibold">Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+        </View>
 
         {/* ===== Scrollable Middle Section (Receipts) ===== */}
         <Text className="text-lg font-semibold text-white mb-2">Receipts</Text>
         <ScrollView className="flex-1 mb-4">
           {(isEdit || (!isEdit && !isView)) && (
             <TouchableOpacity
+            testID="btn-add-image"   // ✅ For adding image
+
               onPress={() => handleImage(true)}
               className="bg-gray-100 border-2 border-dashed border-gray-400 h-40 rounded-xl flex items-center justify-center mb-4"
             >
@@ -495,6 +505,8 @@ export default function CustomerForm({
           </TouchableOpacity>
           {!isView && (
             <TouchableOpacity
+            testID="btn-done"   // ✅ Final Done button
+
               className="flex-1 bg-cyan-600 py-3 rounded-lg"
               onPress={() => setShowConfirm(true)} // open modal first
             >
