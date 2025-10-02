@@ -10,6 +10,8 @@ import {
   Modal,
   KeyboardAvoidingView,
 } from "react-native";
+
+import debounce from "lodash/debounce";
 import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useForm, Controller } from "react-hook-form";
@@ -19,6 +21,7 @@ import Entypo from "@expo/vector-icons/Entypo";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { useCustomers } from "../database/useCustomers";
 import { useFocusEffect } from "@react-navigation/native";
+
 
 export default function CustomerForm({
   onSave,
@@ -94,7 +97,7 @@ export default function CustomerForm({
 
   const nameValue = watch("name");
   const phoneValue = watch("phone");
-
+  console.log("render")
   useEffect(() => {
     if (!nameValue) {
       setSuggestions([]);

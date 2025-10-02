@@ -1,10 +1,12 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
 import {
   ScrollView,
   Text,
   TextInput,
   View,
   TouchableOpacity,
+  FlatList,
+  ActivityIndicator 
 } from "react-native";
 import { useCustomers } from "../database/useCustomers";
 import CustomerCard from "../components/CustomerCard";
@@ -18,7 +20,7 @@ import FloatingButton from "../components/FloatingButton";
 export default function CustomersScreen({ navigation }) {
   const scale = useRef(new Animated.Value(1)).current;
 
-  const { customers, deleteCustomer, reload } = useCustomers();
+  const { customers, deleteCustomer, reload,loading } = useCustomers();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleDelete = async (id, imagePaths = []) => {
@@ -30,36 +32,32 @@ export default function CustomersScreen({ navigation }) {
     }
   };
 
-  // const handleExport = async () => {
-  //   try {
-  //     await exportBackup();
-  //     Toast.show({ type: "success", text1: "Backup exported" });
-  //   } catch (err) {
-  //     Toast.show({ type: "error", text1: "Failed to export backup" });
-  //   }
-  // };
-
-  // const handleImport = async () => {
-  //   try {
-  //     await importBackup(reload);
-  //     Toast.show({ type: "success", text1: "Backup imported" });
-  //   } catch (err) {
-  //     Toast.show({ type: "error", text1: "Failed to import backup" });
-  //   }
-  // };
-
-  const filtered = customers.filter((c) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      c.name?.toLowerCase().startsWith(query) ||
-      c.phone?.toLowerCase().startsWith(query)
+  const filtered = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return customers;
+    return customers.filter(
+      (c) =>
+        c.name?.toLowerCase().startsWith(query) ||
+        c.phone?.toLowerCase().startsWith(query)
     );
-  });
+  }, [customers, searchQuery]);
 
   useFocusEffect(
     useCallback(() => {
       reload();
-    }, [])
+      setSearchQuery("");
+
+    }, [reload])
+  );
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity key={item.id} activeOpacity={0.8}>
+      <CustomerCard
+        customer={item}
+        onDelete={handleDelete}
+        navigation={navigation}
+      />
+    </TouchableOpacity>
   );
 
   return (
@@ -75,18 +73,21 @@ export default function CustomersScreen({ navigation }) {
           placeholderTextColor="#9ca3af"
         />
       </View>
-      {customers.length!==0 ? (
-        <ScrollView className="mb-14">
-          {filtered.map((c) => (
-            <TouchableOpacity key={c.id} activeOpacity={0.8}>
-              <CustomerCard
-                customer={c}
-                onDelete={handleDelete}
-                navigation={navigation}
-              />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Customers List */}
+   {/* Loading Indicator */}
+   {loading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#60a5fa" />
+          <Text className="text-gray-400 mt-3">Loading customers...</Text>
+        </View>
+      ) : customers.length > 0 ? (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 80 }}
+        />
       ) : (
         <View className="flex-1 items-center justify-center py-10">
           <Text className="text-gray-400 text-base italic">
@@ -94,12 +95,10 @@ export default function CustomersScreen({ navigation }) {
           </Text>
         </View>
       )}
-      {/* Customers List */}
 
       {/* Floating Add Customer Button */}
-      {customers.length===0 && (
-              <FloatingButton onPress={() => navigation.navigate("AddCustomer")} />
-
+      {customers.length === 0 && (
+        <FloatingButton onPress={() => navigation.navigate("AddCustomer")} />
       )}
     </View>
   );

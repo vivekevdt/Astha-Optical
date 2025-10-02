@@ -12,9 +12,8 @@ let abortController = new AbortController();
 
 import { openDB } from "../database/db"; // your db helper
 
-export async function exportBackup() {
+export async function exportBackup(onProgress) {
   try {
-    // 1. Close DB before copying
     try {
       const db = await openDB();
       await db.closeAsync();
@@ -34,18 +33,35 @@ export async function exportBackup() {
       await FileSystem.deleteAsync(ZIP_PATH, { idempotent: true });
     }
 
-    // Copy database
-    const dbBackupPath = BACKUP_FOLDER + "customers.db";
-    await FileSystem.copyAsync({ from: DB_PATH, to: dbBackupPath });
+    const filesToCopy = [];
 
-    // Copy media files
+    // Add DB
+    const dbBackupPath = BACKUP_FOLDER + "customers.db";
+    filesToCopy.push({ from: DB_PATH, to: dbBackupPath });
+
+    // Add all media files
     const mediaFiles = await FileSystem.readDirectoryAsync(MEDIA_FOLDER);
     for (const file of mediaFiles) {
-      if (abortController.signal.aborted) throw new Error("Backup cancelled");
-      await FileSystem.copyAsync({
+      filesToCopy.push({
         from: MEDIA_FOLDER + file,
         to: BACKUP_FOLDER + file,
       });
+    }
+
+    // Track progress
+    let copied = 0;
+    const total = filesToCopy.length;
+
+    for (const f of filesToCopy) {
+      if (abortController.signal.aborted) throw new Error("Backup cancelled");
+
+      await FileSystem.copyAsync(f);
+      copied++;
+
+      if (onProgress) {
+        const percent = Math.round((copied / total) * 100);
+        onProgress(percent); // ✅ use callback, not setExportProgress here
+      }
     }
 
     // Create zip

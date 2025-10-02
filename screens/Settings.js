@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { exportBackup, importBackup } from "../utils/backup";
 import { useCustomers } from "../database/useCustomers";
@@ -13,19 +13,32 @@ import * as ImagePicker from "expo-image-picker";
 
 export default function Settings({navigation}) {
     const { customers, deleteCustomer, reload } = useCustomers();
+    const [exportProgress, setExportProgress] = useState(0);
+    const [exportLoading, setExportLoading] = useState(false);
+    const [importLoading, setImportLoading] = useState(false);
+
 
   const handleExport = async () => {
     try {
-      let response= await exportBackup();
+      setExportLoading(true)
+      setExportProgress(0)
+      await exportBackup((percent) => {
+        setExportProgress(percent);
+      });
       Toast.show({ type: "success", text1: "Backup exported" });
       navigation.navigate("Customers")
     } catch (err) {
       Toast.show({ type: "error", text1: "Failed to export backup" });
     }
+    finally {
+      setExportLoading(false);
+    }
   };
 
   const handleImport = async () => {
     try {
+      setImportLoading(true);
+
       await importBackup(reload);
       Toast.show({ type: "success", text1: "Backup imported" });
       navigation.navigate("Customers")
@@ -35,7 +48,11 @@ export default function Settings({navigation}) {
 
       Toast.show({ type: "error", text1: "Failed to import backup" });
     }
+    finally {
+      setImportLoading(false);
+    }
   };
+
   useFocusEffect(
     useCallback(() => {
       reload();
@@ -71,6 +88,22 @@ export default function Settings({navigation}) {
           Restore Backup
         </Text>
       </TouchableOpacity>
+      {exportLoading && (
+        <View className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+          <ActivityIndicator size="large" color="#60a5fa" />
+          <Text className="text-white mt-3 text-lg font-medium">
+          Backup is being creating {exportProgress}% Please Wait....
+          </Text>
+        </View>
+      )}
+      {importLoading && (
+        <View className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+          <ActivityIndicator size="large" color="#0891B2" />
+          <Text className="text-white mt-4 text-base">
+            Backup is being restoring Please Wait....
+          </Text>
+        </View>
+      )}
 
     </SafeAreaView>
   );

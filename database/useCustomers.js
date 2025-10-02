@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useCallback } from "react";
 import { openDB } from "./db";
 import { ensureMediaFolder, saveImageAsync, deleteIfExists } from "../utils/media";
 
@@ -9,6 +9,8 @@ let dbPromise = null; // singleton promise for DB
 export function useCustomers() {
   const [db, setDb] = useState(null);
   const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
 
   // Initialize DB and media folder
   useEffect(() => {
@@ -38,17 +40,19 @@ export function useCustomers() {
     return dbPromise;
   };
 
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     try {
+      setLoading(true); // 👈 start loading
+
       const database = await initDB();
       if (!database) return;
-
+  
       // Fetch all customers
-      const customerRows = await database.getAllAsync("SELECT * FROM customers ORDER By name ");
-
+      const customerRows = await database.getAllAsync("SELECT * FROM customers ORDER By name");
+  
       // Fetch all images
       const imageRows = await database.getAllAsync("SELECT * FROM customer_images");
-
+  
       // Group images by customerId
       const imagesByCustomer = {};
       for (const img of imageRows) {
@@ -61,18 +65,22 @@ export function useCustomers() {
           date: img.date,
         });
       }
-
+  
       // Merge customers with their images
       const mapped = customerRows.map((c) => ({
         ...c,
         images: imagesByCustomer[c.id] || [],
       }));
-
+  
       setCustomers(mapped);
     } catch (err) {
       console.error("Error loading customers:", err);
     }
-  };
+    finally {
+      setLoading(false); // 👈 stop loading
+    }
+  }, []); // 👈 wrapped in useCallback so identity stays stable
+  
 
   const addCustomer = async ({ name, phone, images = [] }) => {
     try {
@@ -227,6 +235,7 @@ const getTotalImages = async () => {
 
   return {
     customers,
+    loading,
     addCustomer,
     deleteCustomer,
     reload: loadCustomers,
